@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hidden Window with Form</title>
+    <style>
+        .hidden {
+            display: none;
+        }
+
+        #hiddenWindow {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            border: 1px solid #ccc;
+        }
+
+        .formContainer {
+            text-align: center;
+        }
+
+        closeButton {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+
+        #timeSlots {
+        list-style: none;
+        padding: 0; 
+        margin: 0;
+        }
+#timeSlots li {
+  margin-bottom: 10px;
+}
+    </style>
+</head>
+
+<body>
+    <ul id="timeSlots">
+       
+    </ul>
+
+    <div id="hiddenWindow" class="hidden">
+        <div class="formContainer">
+            <form id="myForm">
+                <label for="name">Name:</label>
+                <input type="text" id="name" name="name" required>
+                <br><br>
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" required>
+                <br><br>
+                <input type="submit" value="Book">
+                <button id="closeButton">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+
+            function display(result, i) {
+                    const timeSlotsContainer = document.getElementById('timeSlots');
+                    const button = document.createElement('button');
+                    button.className = 'showFormButton';
+                    button.innerHTML = `<h1>Time Slot${i}</h1>
+                        <h3>${result.time}</h3>
+                        <h4>slots Available : ${result.available}</h4>`;
+
+                    const hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = 'timeSlotId';
+                    hiddenInput.value = result.id;
+
+                    const hiddenInput2 = document.createElement('input');
+                hiddenInput2.type = 'hidden';
+                hiddenInput2.value = result.time;
+                hiddenInput2.name = 'timeInput';
+
+                    button.addEventListener('click', function () {
+                        const hiddenWindow = document.getElementById('hiddenWindow');
+                        hiddenWindow.querySelector('form').appendChild(hiddenInput); 
+                        hiddenWindow.querySelector('form').appendChild(hiddenInput2);
+                        hiddenWindow.classList.remove('hidden');
+                    });
+
+                    timeSlotsContainer.appendChild(button);
+                    timeSlotsContainer.appendChild(document.createElement('br'));
+                    timeSlotsContainer.appendChild(document.createElement('br'));
+                }
+
+
+        document.querySelectorAll('.showFormButton').forEach(button => {
+                button.addEventListener('click', function () {
+                    document.getElementById('hiddenWindow').classList.remove('hidden');
+                });
+            });
+
+
+        document.getElementById('myForm').addEventListener('submit', function (e) {
+            const domContentLoadedEvent = new Event('DOMContentLoaded');
+
+            event.preventDefault();
+            let obj={
+                name: e.target.name.value,
+                email: e.target.email.value,
+                id: e.target.timeSlotId.value,
+                time: e.target.timeInput.value,
+            }
+            document.getElementById('hiddenWindow').classList.add('hidden');
+            
+            axios.post("http://localhost:3000/bookSlot",obj).then((response) => {
+                console.log(response.data);
+                 displayResponse(response.data);
+                document.dispatchEvent(domContentLoadedEvent);
+            }).catch((error) => {
+                console.log(error);
+            });
+        });
+
+        document.getElementById('closeButton').addEventListener('click', function () {
+                document.getElementById('hiddenWindow').classList.add('hidden');
+            });
+
+            window.addEventListener('DOMContentLoaded',(e)=>{
+                e.preventDefault();
+                axios.get("http://localhost:3000/getSlots").then((response) => {
+                    for (let i = 0; i < response.data.length; i++) {
+                        if(response.data[i].available>0){
+                        display(response.data[i],i+1);
+                        }
+                    }
+                }).catch((error) => {
+                    console.log(error);
+                });
+
+                axios.get("http://localhost:3000/getbookedSlots").then((response) => {
+                    for (let i = 0; i < response.data.length; i++) {
+                            displayResponse(response.data[i]);
+                    }
+                }).catch((error) => {
+                    console.log(error);
+                });
+
+            })
+
+
+
+                function displayResponse(response) {
+                    const windowElement = document.createElement('div');
+                    windowElement.className = 'response-window';
+                    windowElement.innerHTML = `<form id="newForm">
+        <h2>Hi ${response.name}</h2>
+        <p>Please join the meeting via this </p>
+        <p><a href="${response.link}">${response.link}</a> at </p>
+        <p>Time: ${response.time}</p>
+        <button type="submit" id="cancel" name="cancel">Cancel</button></form>
+    `;
+                    document.body.appendChild(windowElement);
+                }
+
+
+                document.getElementById('newForm').addEventListener('submit', function (e) {
+                    e.preventDefault();
+                        const domContentLoadedEvent = new Event('DOMContentLoaded');
+
+                });
+
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.1/axios.min.js"></script>
+
+</body>
+
+</html>
