@@ -38,6 +38,18 @@
 #timeSlots li {
   margin-bottom: 10px;
 }
+
+.popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            border: 1px solid #ccc;
+            /* box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);*/
+        }
     </style>
 </head>
 
@@ -61,6 +73,13 @@
         </div>
     </div>
 
+    <div id="popup" class="popup">
+    </div>
+
+
+    <ul id="bookedSlots">
+
+    </ul>
     <script>
 
             function display(result, i) {
@@ -68,8 +87,8 @@
                     const button = document.createElement('button');
                     button.className = 'showFormButton';
                     button.innerHTML = `<h1>Time Slot${i}</h1>
-                        <h3>${result.time}</h3>
-                        <h4>slots Available : ${result.available}</h4>`;
+                        <h3>${formatTime(result.time)}</h3>
+                        <h4 class="checkavail">slots Available : ${result.available}</h4>`;
 
                     const hiddenInput = document.createElement('input');
                     hiddenInput.type = 'hidden';
@@ -88,10 +107,15 @@
                         hiddenWindow.classList.remove('hidden');
                     });
 
+                    button.id=result.available;
+
                     timeSlotsContainer.appendChild(button);
                     timeSlotsContainer.appendChild(document.createElement('br'));
                     timeSlotsContainer.appendChild(document.createElement('br'));
+                    return button.querySelector('.checkavail');
                 }
+
+                var domContentLoadedEvent = new Event('DOMContentLoaded');
 
 
         document.querySelectorAll('.showFormButton').forEach(button => {
@@ -102,8 +126,6 @@
 
 
         document.getElementById('myForm').addEventListener('submit', function (e) {
-            const domContentLoadedEvent = new Event('DOMContentLoaded');
-
             event.preventDefault();
             let obj={
                 name: e.target.name.value,
@@ -115,23 +137,64 @@
             
             axios.post("http://localhost:3000/bookSlot",obj).then((response) => {
                 console.log(response.data);
-                 displayResponse(response.data);
-                document.dispatchEvent(domContentLoadedEvent);
+                // displayResponse(response.data);
+                triggerDOMContentLoaded();
+
+                var popup = document.getElementById('popup');
+
+                function removeAllChildNodes(parent) {
+                    while (parent.firstChild) {
+                        parent.removeChild(parent.firstChild);
+                    }
+                }
+                removeAllChildNodes(popup);
+
+                const h = document.createElement('h1');
+                const data=`Hi ${response.data.name} your Meeting scheduled at ${response.data.time}`;
+                const dataitem=document.createTextNode(data);
+                h.appendChild(dataitem);
+                popup.appendChild(h);
+                popup.style.display = 'block';
+                var durationInMillis = 5000;
+                setTimeout(closePopup, durationInMillis);
             }).catch((error) => {
                 console.log(error);
             });
         });
 
+
+        function closePopup() {
+                var popup = document.getElementById('popup');
+                popup.style.display = 'none';
+            }
+
+
         document.getElementById('closeButton').addEventListener('click', function () {
                 document.getElementById('hiddenWindow').classList.add('hidden');
             });
 
+
+            let map1 = new Map();
+            let set2 = new Set();
+
             window.addEventListener('DOMContentLoaded',(e)=>{
-                e.preventDefault();
+               // e.preventDefault();
                 axios.get("http://localhost:3000/getSlots").then((response) => {
                     for (let i = 0; i < response.data.length; i++) {
-                        if(response.data[i].available>0){
-                        display(response.data[i],i+1);
+                        const id = response.data[i].id;
+                        const available = response.data[i].available;
+                        if (available > 0) {
+                            if (!map1.has(id)){
+                                map1.set(id, display(response.data[i], i + 1));
+                            }
+                            else if(map1.get(id)!==available) {
+                                let v=map1.get(id);
+                                v.textContent=`slots Available : ${available}`;
+                            }
+                        } else {
+                            let v1=map1.get(id).parentNode;
+                            v1.remove();
+                            map1.delete(id);
                         }
                     }
                 }).catch((error) => {
@@ -140,7 +203,10 @@
 
                 axios.get("http://localhost:3000/getbookedSlots").then((response) => {
                     for (let i = 0; i < response.data.length; i++) {
+                        if(!set2.has(response.data[i].id)){
                             displayResponse(response.data[i]);
+                            set2.add(response.data[i].id);
+                        }
                     }
                 }).catch((error) => {
                     console.log(error);
@@ -148,27 +214,75 @@
 
             })
 
+                        function displayResponse(response) {
+                            
+                        let timeSlotsContainer = document.getElementById('bookedSlots');
+                            const form1 = document.createElement('form');
+                            form1.innerHTML = `
+                        <h2>Hi ${response.name}</h2>
+                        <p>Please join the meeting via this link</p>
+                        <p><a href="${response.link}">${response.link}</a> at </p>
+                         <p>Time: ${formatTime(response.time)}</p>`;
+                            let hiddenInput = document.createElement('input');
+                            hiddenInput.type = 'hidden';
+                            hiddenInput.name = 'timeSlotId';
+                            hiddenInput.value = response.id;
+
+                            let hiddenInput2 = document.createElement('input');
+                            hiddenInput2.type = 'hidden';
+                            hiddenInput2.value = response.time;
+                            hiddenInput2.name = 'timeInput';
+
+                            let button = document.createElement('button');
+                            button.innerText="Cancel";
+                            button.type="submit";
+        
+                            form1.appendChild(hiddenInput);
+                            form1.appendChild(hiddenInput2);
+                            form1.appendChild(button);
+
+                            form1.addEventListener('submit', function (e) {
+                                handleCancel(e);
+                            });
 
 
-                function displayResponse(response) {
-                    const windowElement = document.createElement('div');
-                    windowElement.className = 'response-window';
-                    windowElement.innerHTML = `<form id="newForm">
-        <h2>Hi ${response.name}</h2>
-        <p>Please join the meeting via this </p>
-        <p><a href="${response.link}">${response.link}</a> at </p>
-        <p>Time: ${response.time}</p>
-        <button type="submit" id="cancel" name="cancel">Cancel</button></form>
-    `;
-                    document.body.appendChild(windowElement);
-                }
+                            timeSlotsContainer.appendChild(form1);
+                            timeSlotsContainer.appendChild(document.createElement('br'));
+                            timeSlotsContainer.appendChild(document.createElement('br'));
+                        }
+
+                        function handleCancel(e){
+                            e.preventDefault();
+                            let p=e.target;
+                            let id=e.target.timeSlotId.value;
+                            let time=e.target.timeInput.value;
+                            console.log(id,time);
+                            axios.delete(`http://localhost:3000/deletebookedSlots/${id}/${time}`).then((response) => {
+                                 p.remove();
+                                 triggerDOMContentLoaded();
+                            }).catch(err=>console.log(err));
+
+                        }
 
 
-                document.getElementById('newForm').addEventListener('submit', function (e) {
-                    e.preventDefault();
-                        const domContentLoadedEvent = new Event('DOMContentLoaded');
+                        function triggerDOMContentLoaded() {
+                                const DOMContentLoadedEvent = new Event('DOMContentLoaded');
+                                window.dispatchEvent(DOMContentLoadedEvent);
+                            }
 
-                });
+
+
+
+                        function formatTime(timeString) {
+                                const [hours, minutes, seconds] = timeString.split(':');
+                                let formattedHours = parseInt(hours) % 12;
+                                formattedHours = formattedHours === 0 ? 12 : formattedHours;
+                                const period = parseInt(hours) < 12 ? 'AM' : 'PM';
+
+                                const formattedTime = `${formattedHours}:${minutes} ${period}`;
+
+                                return formattedTime;
+                            }
 
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.1/axios.min.js"></script>
@@ -176,3 +290,4 @@
 </body>
 
 </html>
+
