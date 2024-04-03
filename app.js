@@ -1,7 +1,7 @@
 const sequelize=require('./util/database');
 const admin = require('./routes/admin');
 
-const TimeSlot=require('./models/slots');
+const Books=require('./models/slots');
 
 const bookedSlot=require('./models/bookedSlots');
 
@@ -24,6 +24,7 @@ app.use(admin);
 sequelize.sync()
     .then(() => {
         app.listen(3000);
+
     })
     .catch((err) => {
         console.log(err);

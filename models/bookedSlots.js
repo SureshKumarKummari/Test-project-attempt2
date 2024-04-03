@@ -1,29 +1,26 @@
 const Sequelize = require('sequelize');
 const sequelize = require('../util/database');
 
-const bookedSlot = sequelize.define('bookedSlot', {
+const booksReturned = sequelize.define('booksReturned', {
   id: {
     type: Sequelize.INTEGER,
     autoIncrement: true,
     allowNull: false,
     primaryKey: true
   },
-  time: {
-    type: Sequelize.TIME,
-    allowNull: false
-  },
-  name: {
+  bookName: {
     type: Sequelize.STRING,
     allowNull: false
   },
-  email:{
-    type: Sequelize.STRING,
-    allowNull: false
+  fine: {
+    type: Sequelize.INTEGER,
+    allowNull: false,
+    defaultValue: 0
   },
-  link:{
-    type: Sequelize.STRING,
-    defaultValue: "https://meet.google.com/iuc-jtjy-cbc"
+  returnDate: {
+    type: Sequelize.DATE,
+    allowNull: false
   }
 });
 
-module.exports = bookedSlot;
+module.exports = booksReturned;

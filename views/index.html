@@ -4,290 +4,187 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hidden Window with Form</title>
+    <title>Library Management System</title>
     <style>
-        .hidden {
-            display: none;
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
         }
 
-        #hiddenWindow {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: white;
-            padding: 20px;
-            border: 1px solid #ccc;
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 0 20px;
         }
 
-        .formContainer {
+        h1 {
             text-align: center;
         }
 
-        closeButton {
-            position: absolute;
-            top: 10px;
-            right: 10px;
+        .search-container {
+            text-align: center;
+            margin-bottom: 20px;
         }
 
-        #timeSlots {
-        list-style: none;
-        padding: 0; 
-        margin: 0;
-        }
-#timeSlots li {
-  margin-bottom: 10px;
-}
-
-.popup {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: white;
-            padding: 20px;
+        .search-container input[type=text] {
+            padding: 10px;
+            width: 60%;
             border: 1px solid #ccc;
-            /* box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);*/
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .search-container button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .search-container button:hover {
+            background-color: #45a049;
+        }
+
+        .books-container {
+            border: 1px solid #ccc;
+            padding: 20px;
+            border-radius: 4px;
+        }
+
+        .book {
+            margin-bottom: 10px;
         }
     </style>
 </head>
 
 <body>
-    <ul id="timeSlots">
-       
-    </ul>
 
-    <div id="hiddenWindow" class="hidden">
-        <div class="formContainer">
-            <form id="myForm">
-                <label for="name">Name:</label>
-                <input type="text" id="name" name="name" required>
-                <br><br>
-                <label for="email">Email:</label>
-                <input type="email" id="email" name="email" required>
-                <br><br>
-                <input type="submit" value="Book">
-                <button id="closeButton">Cancel</button>
-            </form>
+    <div class="container">
+        <h1>Library Management System</h1>
+
+        <div class="search-container">
+            <form onsubmit="searchBooks(e)" id="searchForm">
+            <input type="text" id="searchInput" placeholder="Search for books...">
+            <button type="submit">Search</button>
+        </form>
+        </div>
+
+        <div class="books-container" id="booksContainer">
+            
+        </div>
+        <div id="booksList">
+        </div>
+        <br><br><hr>
+        <div>
+            <h4>Returned Books</h4>
+            <hr>
+            <div id="returnedList"></div>
         </div>
     </div>
 
-    <div id="popup" class="popup">
-    </div>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script>
 
-
-    <ul id="bookedSlots">
-
-    </ul>
-    <script>
-
-            function display(result, i) {
-                    const timeSlotsContainer = document.getElementById('timeSlots');
-                    const button = document.createElement('button');
-                    button.className = 'showFormButton';
-                    button.innerHTML = `<h1>Time Slot${i}</h1>
-                        <h3>${formatTime(result.time)}</h3>
-                        <h4 class="checkavail">slots Available : ${result.available}</h4>`;
-
-                    const hiddenInput = document.createElement('input');
-                    hiddenInput.type = 'hidden';
-                    hiddenInput.name = 'timeSlotId';
-                    hiddenInput.value = result.id;
-
-                    const hiddenInput2 = document.createElement('input');
-                hiddenInput2.type = 'hidden';
-                hiddenInput2.value = result.time;
-                hiddenInput2.name = 'timeInput';
-
-                    button.addEventListener('click', function () {
-                        const hiddenWindow = document.getElementById('hiddenWindow');
-                        hiddenWindow.querySelector('form').appendChild(hiddenInput); 
-                        hiddenWindow.querySelector('form').appendChild(hiddenInput2);
-                        hiddenWindow.classList.remove('hidden');
-                    });
-
-                    button.id=result.available;
-
-                    timeSlotsContainer.appendChild(button);
-                    timeSlotsContainer.appendChild(document.createElement('br'));
-                    timeSlotsContainer.appendChild(document.createElement('br'));
-                    return button.querySelector('.checkavail');
-                }
-
-                var domContentLoadedEvent = new Event('DOMContentLoaded');
-
-
-        document.querySelectorAll('.showFormButton').forEach(button => {
-                button.addEventListener('click', function () {
-                    document.getElementById('hiddenWindow').classList.remove('hidden');
-                });
-            });
-
-
-        document.getElementById('myForm').addEventListener('submit', function (e) {
-            event.preventDefault();
-            let obj={
-                name: e.target.name.value,
-                email: e.target.email.value,
-                id: e.target.timeSlotId.value,
-                time: e.target.timeInput.value,
-            }
-            document.getElementById('hiddenWindow').classList.add('hidden');
-            
-            axios.post("http://localhost:3000/bookSlot",obj).then((response) => {
-                console.log(response.data);
-                // displayResponse(response.data);
-                triggerDOMContentLoaded();
-
-                var popup = document.getElementById('popup');
-
-                function removeAllChildNodes(parent) {
-                    while (parent.firstChild) {
-                        parent.removeChild(parent.firstChild);
-                    }
-                }
-                removeAllChildNodes(popup);
-
-                const h = document.createElement('h1');
-                const data=`Hi ${response.data.name} your Meeting scheduled at ${response.data.time}`;
-                const dataitem=document.createTextNode(data);
-                h.appendChild(dataitem);
-                popup.appendChild(h);
-                popup.style.display = 'block';
-                var durationInMillis = 5000;
-                setTimeout(closePopup, durationInMillis);
-            }).catch((error) => {
-                console.log(error);
-            });
-        });
-
-
-        function closePopup() {
-                var popup = document.getElementById('popup');
-                popup.style.display = 'none';
-            }
-
-
-        document.getElementById('closeButton').addEventListener('click', function () {
-                document.getElementById('hiddenWindow').classList.add('hidden');
-            });
-
-
-            let map1 = new Map();
-            let set2 = new Set();
-
-            window.addEventListener('DOMContentLoaded',(e)=>{
-               // e.preventDefault();
-                axios.get("http://localhost:3000/getSlots").then((response) => {
-                    for (let i = 0; i < response.data.length; i++) {
-                        const id = response.data[i].id;
-                        const available = response.data[i].available;
-                        if (available > 0) {
-                            if (!map1.has(id)){
-                                map1.set(id, display(response.data[i], i + 1));
-                            }
-                            else if(map1.get(id)!==available) {
-                                let v=map1.get(id);
-                                v.textContent=`slots Available : ${available}`;
-                            }
-                        } else {
-                            let v1=map1.get(id).parentNode;
-                            v1.remove();
-                            map1.delete(id);
-                        }
-                    }
-                }).catch((error) => {
-                    console.log(error);
-                });
-
-                axios.get("http://localhost:3000/getbookedSlots").then((response) => {
-                    for (let i = 0; i < response.data.length; i++) {
-                        if(!set2.has(response.data[i].id)){
-                            displayResponse(response.data[i]);
-                            set2.add(response.data[i].id);
-                        }
-                    }
-                }).catch((error) => {
-                    console.log(error);
-                });
-
-            })
-
-                        function displayResponse(response) {
                             
-                        let timeSlotsContainer = document.getElementById('bookedSlots');
-                            const form1 = document.createElement('form');
-                            form1.innerHTML = `
-                        <h2>Hi ${response.name}</h2>
-                        <p>Please join the meeting via this link</p>
-                        <p><a href="${response.link}">${response.link}</a> at </p>
-                         <p>Time: ${formatTime(response.time)}</p>`;
-                            let hiddenInput = document.createElement('input');
-                            hiddenInput.type = 'hidden';
-                            hiddenInput.name = 'timeSlotId';
-                            hiddenInput.value = response.id;
+                document.getElementById('searchForm').addEventListener('submit', function(event) {
+                        event.preventDefault(); 
+                        const searchInput = document.getElementById('searchInput').value.trim().toLowerCase();
+                    if (searchInput) {
+                     searchBooks(searchInput);
+      } else {
+                    alert('Please enter a search query.');
+      }
+    });
+            function searchBooks(query) {
+      const books = document.querySelectorAll('.book');
+      books.forEach(book => {
+        const bookName = book.querySelector('p:nth-child(1)').textContent.toLowerCase();
+             if (bookName.includes(query)) {
+                 book.style.display = 'block';
+        } else {
+              book.style.display = 'none';
+        }
+      });
+    }
+          function fetchBooks() {
+                 axios.get("http://localhost:3000/getBooks")
+                  .then(response => {
+                        const books = response.data;
+                         const booksListElement = document.getElementById('booksList');
 
-                            let hiddenInput2 = document.createElement('input');
-                            hiddenInput2.type = 'hidden';
-                            hiddenInput2.value = response.time;
-                            hiddenInput2.name = 'timeInput';
-
-                            let button = document.createElement('button');
-                            button.innerText="Cancel";
-                            button.type="submit";
-        
-                            form1.appendChild(hiddenInput);
-                            form1.appendChild(hiddenInput2);
-                            form1.appendChild(button);
-
-                            form1.addEventListener('submit', function (e) {
-                                handleCancel(e);
-                            });
-
-
-                            timeSlotsContainer.appendChild(form1);
-                            timeSlotsContainer.appendChild(document.createElement('br'));
-                            timeSlotsContainer.appendChild(document.createElement('br'));
-                        }
-
-                        function handleCancel(e){
-                            e.preventDefault();
-                            let p=e.target;
-                            let id=e.target.timeSlotId.value;
-                            let time=e.target.timeInput.value;
-                            console.log(id,time);
-                            axios.delete(`http://localhost:3000/deletebookedSlots/${id}/${time}`).then((response) => {
-                                 p.remove();
-                                 triggerDOMContentLoaded();
-                            }).catch(err=>console.log(err));
-
-                        }
+                    booksListElement.innerHTML = '';
+                     books.forEach(book => {
+                         const bookElement = document.createElement('div');
+                     bookElement.classList.add('book');
+                     bookElement.innerHTML = `<p><strong>Book Name:</strong> ${book.bookName}</p>
+                     <p><strong>Return Date:</strong> ${book.returnDate}</p>
+                      <p><strong>Current Fine:</strong> ${book.currentFine}</p>
+                     <button onclick="returnBook(${book.id},${book.currentFine})">Return</button><hr>`;
+                       booksListElement.appendChild(bookElement);
+                  });
+              })
+             .catch(error => {
+                    console.error('Error fetching books:', error);
+             });
+    }
 
 
-                        function triggerDOMContentLoaded() {
-                                const DOMContentLoadedEvent = new Event('DOMContentLoaded');
-                                window.dispatchEvent(DOMContentLoadedEvent);
+    function returnBook(bookId, fine) {
+            if (fine > 0) {
+                const confirmation = confirm(`A fine of ${fine} has been imposed for this book. Do you want to proceed with returning it?`);
+                if (confirmation) {
+                    axios.delete(`http://localhost:3000/deleteBook/${bookId}`)
+                        .then(response => {
+                            handleReturnedBook(response.data);
+                            console.log('Book returned successfully:', response.data);
+                            fetchBooks();
+                        })
+                        .catch(error => {
+                            console.error('Error returning book:', error);
+                        });
+                }
+            } else {
+                axios.delete(`http://localhost:3000/deleteBook/${bookId}`)
+                    .then(response => {
+                        handleReturnedBook(response.data);
+                        console.log('Book returned successfully:', response.data);
+                        fetchBooks();
+                    })
+                    .catch(error => {
+                        console.error('Error returning book:', error);
+                    });
+            }
+        }
+
+
+
+            fetchBooks();
+
+
+            function handleReturnedBook(returnedBook) {
+                    const booksList = document.getElementById('returnedList');
+                    const bookElement = document.createElement('div');
+                    bookElement.innerHTML = `<p><strong>Book Name:</strong> ${returnedBook.bookName}</p>
+                               <p><strong>Return Date:</strong> ${returnedBook.returnDate}</p>
+                               <p><strong>Current Fine:</strong> ${returnedBook.fine}</p><hr>`;
+                    booksList.appendChild(bookElement);
+                }
+
+                        
+                window.addEventListener('DOMContentLoaded', (e) => {
+                        axios.get("http://localhost:3000/getreturned").then((response) => {
+                            for (let i = 0; i < response.data.length; i++) {
+                                handleReturnedBook(response.data[i]);
                             }
-
-
-
-
-                        function formatTime(timeString) {
-                                const [hours, minutes, seconds] = timeString.split(':');
-                                let formattedHours = parseInt(hours) % 12;
-                                formattedHours = formattedHours === 0 ? 12 : formattedHours;
-                                const period = parseInt(hours) < 12 ? 'AM' : 'PM';
-
-                                const formattedTime = `${formattedHours}:${minutes} ${period}`;
-
-                                return formattedTime;
-                            }
-
+                        }).catch((error) => {
+                            console.log(error);
+                        });
+                    });
     </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.1/axios.min.js"></script>
 
 </body>
 
 </html>
-

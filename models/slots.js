@@ -1,23 +1,39 @@
 const Sequelize = require('sequelize');
 const sequelize = require('../util/database');
 
-const TimeSlot = sequelize.define('timeSlot', {
+const Books = sequelize.define('book', {
   id: {
     type: Sequelize.INTEGER,
     autoIncrement: true,
     allowNull: false,
     primaryKey: true
   },
-  time: {
-    type: Sequelize.TIME,
+  bookName: {
+    type: Sequelize.STRING,
     allowNull: false
   },
-  available: {
-    type: Sequelize.INTEGER,
+  returnDate: {
+    type: Sequelize.DATE,
     allowNull: false
+  },
+  currentFine: {
+    type: Sequelize.INTEGER,
+    allowNull: false,
+    defaultValue: 0 
+  }
+}, {
+  hooks: {
+    beforeUpdate: (book, options) => {
+      if (book.returnDate < new Date()) {
+        const hoursLate = Math.ceil((new Date() - book.returnDate) / (1000 * 60 * 60));
+        const fine = hoursLate * 10; 
+        book.currentFine = fine;
+      }
+    }
   }
 });
 
-module.exports = TimeSlot;
+module.exports = Books;
+
 
 

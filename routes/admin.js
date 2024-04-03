@@ -4,12 +4,11 @@ const adminController = require('../controllers/admin');
 
 const router = express.Router();
 
-router.get('/getSlots', adminController.getSlots);
+router.get('/getBooks', adminController.getBooks);
 
-router.post('/bookSlot',adminController.bookedSlot);
+router.delete('/deletebook/:id',adminController.deletebook);
 
-router.get('/getbookedSlots',adminController.getbookedSlots);
-
-router.delete('/deletebookedSlots/:id/:date',adminController.deletebookedSlots);
+router.get('/getreturned',adminController.getreturnedBooks);
 
 module.exports = router;
+
